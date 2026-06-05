@@ -89,8 +89,14 @@ results = model.evaluate(x_test, y_test, verbose=2)
 print(f'Test loss: {results[0]:.4f}, Test accuracy: {results[1] * 100:.2f}%')
 
 try:
-    print(f'Exporting TFJS model to {TFJS_DIR}')
+    # Save .keras model (best weights already restored by EarlyStopping)
+    model.save(str(MODEL_PATH))
+    print(f'✓ Keras model saved to {MODEL_PATH}')
+
+    # Convert directly to TensorFlow.js format
+    print(f'Converting to TFJS format at {TFJS_DIR}...')
     tfjs.converters.save_keras_model(model, str(TFJS_DIR))
     print('Model converted to TensorFlow.js format successfully.')
+
 except Exception as e:
-    print(" ##### Error converting model to TensorFlow.js format:", e)
+    print(f'Error: {e}')

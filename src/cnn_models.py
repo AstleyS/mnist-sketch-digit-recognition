@@ -1,5 +1,6 @@
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import InputLayer, Conv2D, MaxPooling2D, Flatten, Dense
+from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, Flatten, Dense
+
 
 def simple_cnn(
     num_classes=10,
@@ -14,14 +15,13 @@ def simple_cnn(
     """
     Builds a simple CNN model for image classification.
     This Simple CNN is a sequential model that consists of:
-        1. A Conv2D layer with specified filters, kernel size, and activation function.
-        2. A MaxPooling2D layer to downsample the feature maps.
-        3. A Flatten layer to convert the 2D feature maps into a 1D vector.
-        4. A Dense layer with specified units and activation function.
-        5. An output Dense layer with the number of classes and specified activation function.
-    
+        1. An Input layer defining the shape of the input images.
+        2. A Conv2D layer with specified filters, kernel size, and activation function.
+        3. A MaxPooling2D layer to downsample the feature maps.
+        4. A Flatten layer to convert the 2D feature maps into a 1D vector.
+        5. A Dense layer with specified units and activation function.
+        6. An output Dense layer with the number of classes and specified activation function.
     Args:
-        input_shape (tuple): Shape of the input images (height, width, channels).
         num_classes (int): Number of output classes.
         conv_filters (int): Number of filters for Conv2D.
         conv_kernel_size (tuple): Kernel size for Conv2D.
@@ -30,13 +30,12 @@ def simple_cnn(
         dense_units (int): Number of units in Dense layer.
         dense_activation (str): Activation for Dense layer.
         output_activation (str): Activation for output layer.
-    
     Returns:
-        model (Sequential): A Keras Sequential model instance.      
+        model (Sequential): A Keras Sequential model instance.
     """
     model = Sequential([
-        Conv2D(conv_filters, conv_kernel_size, activation=conv_activation, input_shape=((28, 28, 1))),
-        # Note: input_shape should be (height, width, channels), e.g., (28, 28, 1) for grayscale images
+        Input(shape=(28, 28, 1)),  # Explicit Input layer required in Keras 3
+        Conv2D(conv_filters, conv_kernel_size, activation=conv_activation),
         MaxPooling2D(pool_size),
         Flatten(),
         Dense(dense_units, activation=dense_activation),

@@ -20,7 +20,7 @@ const CanvasArea = ({
   const canvasRef = useRef(null);
   const contextRef = useRef(null);
   const predictionTimeoutRef = useRef(null);
-  const { isModelLoaded, predictDigit } = useDigitModel();
+  const { isModelLoaded, predictDigit, loadError } = useDigitModel();
 
   // It initializes the canvas and sets the context for drawing.
   useEffect(() => {
@@ -135,7 +135,12 @@ const CanvasArea = ({
 
   return (
     <div className="flex flex-col items-center">
-      {!isModelLoaded && (
+      {loadError && (
+        <div className="mb-4 p-3 bg-red-900 border border-red-700 text-red-200 rounded font-semibold text-sm">
+          ✗ Model Error: {loadError}
+        </div>
+      )}
+      {!isModelLoaded && !loadError && (
         <div className="mb-4 text-yellow-400 font-semibold">
           Model is loading, please wait...
         </div>
