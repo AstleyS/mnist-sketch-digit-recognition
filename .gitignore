@@ -1,4 +1,7 @@
 data/
+node_modules/
+.idea/
+.vite/
 
 
 # Byte-compiled / optimized / DLL files

@@ -1,83 +1,63 @@
 import * as tf from '@tensorflow/tfjs'
-import { loadLayersModel  } from '@tensorflow/tfjs'
+import { loadLayersModel } from '@tensorflow/tfjs'
 import { useEffect, useState } from 'react'
-import { getRandomPrediction } from '../const.js';
-
 
 /*
     * useDigitModel hook
-    * This hook is responsible for loading the pre-trained digit recognition model.
-    * It uses TensorFlow.js to load the model from the specified path.
-    * 
+    * This hook loads a pre-trained TensorFlow.js MNIST model from the public directory
+    * and exposes a `predictDigit` function that accepts a canvas element.
 */
 const useDigitModel = () => {
-
-    /*
-    const [model, setModel] = useState(null);
+    const [model, setModel] = useState(null)
+    const [isModelLoaded, setIsModelLoaded] = useState(false)
 
     useEffect(() => {
-        // Function to load the pre-trained model
-        // This function is called when the component mounts
-        // It uses TensorFlow.js to load the model from the specified path
         const loadModel = async () => {
             try {
-                console.log('Loading model...');
-                // Load the pre-trained model from the public directory
-                const loadedModel = await loadLayersModel('/mnist_cnn_model_tfjs/model.json');
-                setModel(loadedModel);
-                console.log('Model loaded successfully:', loadedModel);
+                console.log('Loading model...')
+                const loadedModel = await loadLayersModel('/mnist_cnn_model_tfjs/model.json')
+                setModel(loadedModel)
+                setIsModelLoaded(true)
+                console.log('Model loaded successfully')
             } catch (error) {
-                console.error('Error loading model:', error);
+                console.error('Error loading model:', error)
             }
-        };
+        }
 
-        loadModel();
-    }, []);
-    */
-
-    const isModelLoaded = true;
+        loadModel()
+    }, [])
 
     const predictDigit = async (canvas) => {
-        /*
         if (!model) {
-            console.errror('Model is not loaded yet');
-            return null;
+            console.error('Model is not loaded yet')
+            return null
         }
-        */
 
-        console.log('Predicting digit...');
+        try {
+            const predictionTensor = tf.tidy(() => {
+                const tensor = tf.browser.fromPixels(canvas, 1)
+                    .resizeNearestNeighbor([28, 28])
+                    .toFloat()
+                    .div(tf.scalar(255.0))
+                    .expandDims(0)
 
-        return getRandomPrediction();
+                return model.predict(tensor)
+            })
 
-        /*
-        // Resize the canvas to 28x28 pixels
-        const tensor = tf.browser.fromPixels(canvas, 1) // 1 channel for grayscale
-            .resizeNearestNeighbor([28, 28]) // Resize to 28x28
-            .toFloat() // Convert to float32
-            .div(tf.scalar(255.0)) // Normalize to [0, 1]
-            .expandDims(0); // Add batch dimension
+            const data = await predictionTensor.data()
+            predictionTensor.dispose()
 
-        
-        const prediction = model.predict(tensor);
-        const data = await prediction.data();
-
-        // Return top-3 predictions
-        const topPredictions = [...data].map((confidence, index) => ({
-            digit: index,
-            confidence: confidence
-        })).sort((a, b) => b.confidence - a.confidence).slice(0, 3);
-
-        return topPredictions;
-        */
+            return Array.from(data).map((confidence, digit) => ({
+                digit: String(digit),
+                confidence
+            }))
+        } catch (error) {
+            console.error('Error while predicting digit:', error)
+            return null
+        }
     }
 
-    // Return the model and the predictDigit function
-    // The ismodelLoaded flag indicates whether the model has been loaded successfully
-    // The predictDigit function can be used to make predictions on a given canvas
-    // return { isModelLoaded: !!model, predictDigit };
-    return { isModelLoaded, predictDigit };
-
-
+    return { isModelLoaded, predictDigit }
 }
 
 export default useDigitModel;

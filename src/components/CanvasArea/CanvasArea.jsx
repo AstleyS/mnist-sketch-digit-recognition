@@ -17,10 +17,10 @@ const CanvasArea = ({
 
   const [isDrawing, setIsDrawing] = useState(false);
   const canvasRef = useRef(null);
-  const [context, setContext] = useState(null);
+  const contextRef = useRef(null);
   const { isModelLoaded, predictDigit } = useDigitModel();
 
-  // It initializes the canvas and sets the context for drawing.  
+  // It initializes the canvas and sets the context for drawing.
   useEffect(() => {
     const canvas = canvasRef.current;
     canvas.width = DIMENSIONS.canvasWidth;
@@ -33,55 +33,73 @@ const CanvasArea = ({
     ctx.strokeStyle = DRAWING_STYLES.strokeStyle
     ctx.lineWidth = DRAWING_STYLES.lineWidth
     ctx.lineCap = DRAWING_STYLES.lineCap
-    setContext(ctx)
+    contextRef.current = ctx
   }, []);
 
-  const startDrawing = (e) => {
-    setIsDrawing(true);
-    
-    // rect and CanvasRef.current is the reference to the canvas element
+  const getPointerPosition = (e) => {
     const rect = canvasRef.current.getBoundingClientRect();
-    // e.client[coordinate] is the coordinate of the mouse pointer and rect.[direction] is the [direction] edge of the canvas
-    const x = e.clientX - rect.left; 
-    const y = e.clientY - rect.top;
 
-    // Start drawing by moving the context to the current mouse position
-    context.beginPath()
-    context.moveTo(x, y) 
+    if (e.touches && e.touches.length > 0) {
+      return {
+        x: e.touches[0].clientX - rect.left,
+        y: e.touches[0].clientY - rect.top,
+      }
+    }
 
+    return {
+      x: e.nativeEvent.offsetX,
+      y: e.nativeEvent.offsetY,
+    }
   }
+
+  const startDrawing = (e) => {
+    const ctx = contextRef.current
+    if (!ctx) return
+
+    setIsDrawing(true);
+    const { x, y } = getPointerPosition(e)
+
+    ctx.beginPath()
+    ctx.moveTo(x, y)
+  }
+
   const stopDrawing = () => {
+    const ctx = contextRef.current
+    if (!ctx) return
+
     setIsDrawing(false);
-    context.closePath(); // Close the path when the mouse is released
-    handlePrediction(); // Call the prediction function when drawing stops
+    ctx.closePath()
+    handlePrediction()
   }
   
   const draw = (e) => {
     if (!isDrawing) return;
+    const ctx = contextRef.current
+    if (!ctx) return
 
-    // rect and CanvasRef.current is the reference to the canvas element
-    const rect = canvasRef.current.getBoundingClientRect();
-    // e.client[coordinate] is the coordinate of the mouse pointer and rect.[direction] is the [direction] edge of the canvas
-    const x = e.clientX - rect.left; 
-    const y = e.clientY - rect.top;
-
-    context.lineTo(x, y)
-    context.stroke()
+    const { x, y } = getPointerPosition(e)
+    ctx.lineTo(x, y)
+    ctx.stroke()
   }
 
   const clearCanvas = () => {
-    const canvas = canvasRef.current;
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    setPrediction(null);
+    const ctx = contextRef.current
+    const canvas = canvasRef.current
+    if (!ctx || !canvas) return
+
+    ctx.fillStyle = DRAWING_STYLES.fillStyle
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    setPrediction(null)
   }
 
   const handlePrediction = async () => {
+    if (!isModelLoaded) {
+      console.error('Model is not loaded yet. Please wait.')
+      return
+    }
 
-    if (!isModelLoaded) return console('Model is not loaded yet. Please wait.');
-
-    const prediction = await predictDigit(canvasRef.current);
-    setPrediction(prediction);
-   
+    const prediction = await predictDigit(canvasRef.current)
+    setPrediction(prediction)
   }
 
   return (
@@ -96,6 +114,10 @@ const CanvasArea = ({
         onMouseDown={isModelLoaded ? startDrawing : undefined}
         onMouseUp={isModelLoaded ? stopDrawing : undefined}
         onMouseMove={isModelLoaded ? draw : undefined}
+        onMouseLeave={isModelLoaded ? stopDrawing : undefined}
+        onTouchStart={isModelLoaded ? startDrawing : undefined}
+        onTouchMove={isModelLoaded ? draw : undefined}
+        onTouchEnd={isModelLoaded ? stopDrawing : undefined}
         className={`border border-gray-600 rounded shadow-md cursor-crosshair bg-black transition-opacity duration-300 ${
           isModelLoaded ? 'opacity-100' : 'opacity-50 pointer-events-none'
         }`}
