@@ -41,3 +41,17 @@ npm install
 
 # Start development server
 npm run dev
+
+## Training the MNIST model
+
+This project includes `src/train_model.py` for training the TensorFlow/Keras MNIST model and exporting it to TensorFlow.js format.
+
+```bash
+# Install Python dependencies
+pip install -r requirements.txt
+
+# Train and export the model
+python src/train_model.py
+```
+
+After training succeeds, the converted TFJS model is saved to `public/mnist_cnn_model_tfjs/`, which is the path the browser app loads.

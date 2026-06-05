@@ -1,44 +1,39 @@
 import os
-import subprocess
+from pathlib import Path
+
+# Force CPU-only execution to avoid cuDNN/CUDA mismatches in environments
+# where system CUDA/cuDNN versions don't match the TensorFlow build.
+# You can remove this line if you have matching CUDA/cuDNN and want GPU training.
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 import tensorflow as tf
-
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Flatten, Conv2D, MaxPooling2D
 import tensorflowjs as tfjs
+from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 from cnn_models import simple_cnn
 
-print("\nTensorflow version:", tf.__version__)
-print("Keras version:", tf.keras.__version__)
-print("CUDA version:", tf.sysconfig.get_build_info().get('cuda_version', 'N/A'))
-print("CuDNN version:", tf.sysconfig.get_build_info().get('cudnn_version', 'N/A'))
+# Training settings
+BATCH_SIZE = 128
+EPOCHS = 10
+MODEL_DIR = Path('saved_models')
+TFJS_DIR = Path('public/mnist_cnn_model_tfjs')
+MODEL_PATH = MODEL_DIR / 'mnist_cnn_model.keras'
 
-gpus = tf.config.list_physical_devices('GPU')
-print("GPUs available:", gpus)
+MODEL_DIR.mkdir(parents=True, exist_ok=True)
+TFJS_DIR.mkdir(parents=True, exist_ok=True)
 
-# Get system GPU info
-print("\nnvidia-smi output:")
-try:
-    subprocess.run(["nvidia-smi"], check=True)
-except Exception as e:
-    print("Error running nvidia-smi:", e)
+print(f"TensorFlow version: {tf.__version__}")
+print(f"Keras version: {tf.keras.__version__}")
+print(f"GPU devices: {tf.config.list_physical_devices('GPU')}")
 
 
 
 # Load the MNIST dataset https://keras.io/api/datasets/mnist/
 (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
-assert x_train.shape == (60000, 28, 28)
-assert x_test.shape == (10000, 28, 28)
-assert y_train.shape == (60000,)
-assert y_test.shape == (10000,)
 
-# Normalize the data
-x_train = x_train / 255.0
-x_test = x_test / 255.0
-
-# Reshape the data to include the channel dimension
-x_train = x_train.reshape(-1, 28, 28, 1) # -1 for grayscale images, 28x28 for image size, 1 for channel
+# Normalize the data and add channel dimension
+x_train = x_train.astype('float32') / 255.0
+x_test = x_test.astype('float32') / 255.0
+x_train = x_train.reshape(-1, 28, 28, 1)
 x_test = x_test.reshape(-1, 28, 28, 1)
 
 
@@ -63,28 +58,39 @@ model.compile(
 
 model.summary()
 
-# Train the model
+callbacks = [
+    EarlyStopping(
+        monitor='val_accuracy',
+        patience=3,
+        restore_best_weights=True,
+        verbose=1
+    ),
+    ModelCheckpoint(
+        filepath=MODEL_PATH,
+        monitor='val_accuracy',
+        save_best_only=True,
+        verbose=1
+    )
+]
+
+print('\nStarting MNIST training...')
 model.fit(
-    x_train, y_train,
-    epochs=1,
-    batch_size=32,
-    validation_data=(x_test, y_test)
+    x_train,
+    y_train,
+    epochs=EPOCHS,
+    batch_size=BATCH_SIZE,
+    validation_data=(x_test, y_test),
+    callbacks=callbacks,
+    verbose=2
 )
 
-# Save the model
+print('\nEvaluating model on test data...')
+results = model.evaluate(x_test, y_test, verbose=2)
+print(f'Test loss: {results[0]:.4f}, Test accuracy: {results[1] * 100:.2f}%')
+
 try:
-    
-    model.save('saved_models/mnist_cnn_model.keras')
-    print("##### Model saved successfully. #####")
-
-except Exception as e:
-    print("##### Error saving model:", e)
-
-# Convert the model to TensorFlow.js format
-try:
-
-    tfjs.converters.save_keras_model(model, 'public/mnist_cnn_model_tfjs')
-    print("##### Model converted to TensorFlow.js format successfully. #####")
-
+    print(f'Exporting TFJS model to {TFJS_DIR}')
+    tfjs.converters.save_keras_model(model, str(TFJS_DIR))
+    print('Model converted to TensorFlow.js format successfully.')
 except Exception as e:
     print(" ##### Error converting model to TensorFlow.js format:", e)

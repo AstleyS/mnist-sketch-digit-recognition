@@ -1,0 +1,7 @@
+tensorflow>=2.14
+tensorflowjs>=0.13.0
+numpy>=1.25
+torch>=2.0
+torchvision>=0.15
+onnx>=1.14
+onnxruntime>=1.22
