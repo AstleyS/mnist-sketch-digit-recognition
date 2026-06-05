@@ -16,8 +16,10 @@ const CanvasArea = ({
 }) => {
 
   const [isDrawing, setIsDrawing] = useState(false);
+  const [isPredicting, setIsPredicting] = useState(false);
   const canvasRef = useRef(null);
   const contextRef = useRef(null);
+  const predictionTimeoutRef = useRef(null);
   const { isModelLoaded, predictDigit } = useDigitModel();
 
   // It initializes the canvas and sets the context for drawing.
@@ -63,12 +65,34 @@ const CanvasArea = ({
     ctx.moveTo(x, y)
   }
 
+  const clearPredictionSchedule = () => {
+    if (predictionTimeoutRef.current) {
+      clearTimeout(predictionTimeoutRef.current)
+      predictionTimeoutRef.current = null
+    }
+  }
+
+  useEffect(() => {
+    return () => {
+      clearPredictionSchedule()
+    }
+  }, [])
+
+  const schedulePrediction = () => {
+    clearPredictionSchedule()
+    predictionTimeoutRef.current = setTimeout(() => {
+      handlePrediction()
+      predictionTimeoutRef.current = null
+    }, 200)
+  }
+
   const stopDrawing = () => {
     const ctx = contextRef.current
     if (!ctx) return
 
     setIsDrawing(false);
     ctx.closePath()
+    clearPredictionSchedule()
     handlePrediction()
   }
   
@@ -80,6 +104,7 @@ const CanvasArea = ({
     const { x, y } = getPointerPosition(e)
     ctx.lineTo(x, y)
     ctx.stroke()
+    schedulePrediction()
   }
 
   const clearCanvas = () => {
@@ -87,6 +112,7 @@ const CanvasArea = ({
     const canvas = canvasRef.current
     if (!ctx || !canvas) return
 
+    clearPredictionSchedule()
     ctx.fillStyle = DRAWING_STYLES.fillStyle
     ctx.fillRect(0, 0, canvas.width, canvas.height)
     setPrediction(null)
@@ -98,8 +124,13 @@ const CanvasArea = ({
       return
     }
 
-    const prediction = await predictDigit(canvasRef.current)
-    setPrediction(prediction)
+    setIsPredicting(true)
+    try {
+      const prediction = await predictDigit(canvasRef.current)
+      setPrediction(prediction)
+    } finally {
+      setIsPredicting(false)
+    }
   }
 
   return (
@@ -123,7 +154,10 @@ const CanvasArea = ({
         }`}
         tabIndex={isModelLoaded ? 0 : -1}
       />
-      <div className="mt-4 flex gap-4">
+      <div className="mt-4 flex flex-col items-center gap-4">
+        {isPredicting && (
+          <div className="text-sm text-blue-300">Updating prediction...</div>
+        )}
         <button
           className="!bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
           onClick={clearCanvas}
