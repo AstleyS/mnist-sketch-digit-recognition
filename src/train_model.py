@@ -98,5 +98,7 @@ try:
     tfjs.converters.save_keras_model(model, str(TFJS_DIR))
     print('Model converted to TensorFlow.js format successfully.')
 
+    import patch_model
+
 except Exception as e:
     print(f'Error: {e}')
