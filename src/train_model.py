@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 
+from utils.patch_model import patch_tfjs_model_json
+
 # Force CPU-only execution to avoid cuDNN/CUDA mismatches in environments
 # where system CUDA/cuDNN versions don't match the TensorFlow build.
 # You can remove this line if you have matching CUDA/cuDNN and want GPU training.
@@ -9,7 +11,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import tensorflow as tf
 import tensorflowjs as tfjs
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
-from cnn_models import simple_cnn
+from models.cnn_models import simple_cnn
 
 # Training settings
 BATCH_SIZE = 128
@@ -91,14 +93,15 @@ print(f'Test loss: {results[0]:.4f}, Test accuracy: {results[1] * 100:.2f}%')
 try:
     # Save .keras model (best weights already restored by EarlyStopping)
     model.save(str(MODEL_PATH))
-    print(f'✓ Keras model saved to {MODEL_PATH}')
+    print(f'Keras model saved to {MODEL_PATH}')
 
     # Convert directly to TensorFlow.js format
     print(f'Converting to TFJS format at {TFJS_DIR}...')
     tfjs.converters.save_keras_model(model, str(TFJS_DIR))
     print('Model converted to TensorFlow.js format successfully.')
 
-    import patch_model
+    patch_tfjs_model_json(TFJS_DIR / 'model.json')
+
 
 except Exception as e:
     print(f'Error: {e}')

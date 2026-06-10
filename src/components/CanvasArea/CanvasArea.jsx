@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import './CanvasArea.css';
 
-import { DIMENSIONS, DRAWING_STYLES } from '../../const';
+import { DIMENSIONS, DRAWING_STYLES } from '../../utils/const';
 
 import useDigitModel from '../../hooks/useDigitModel';
 
@@ -17,6 +17,7 @@ const CanvasArea = ({
 
   const [isDrawing, setIsDrawing] = useState(false);
   const [isPredicting, setIsPredicting] = useState(false);
+  const [hasDrawn, setHasDrawn] = useState(false);
   const canvasRef = useRef(null);
   const contextRef = useRef(null);
   const predictionTimeoutRef = useRef(null);
@@ -87,23 +88,33 @@ const CanvasArea = ({
   }
 
   const stopDrawing = () => {
+    if (!isDrawing || !hasDrawn) {
+      setIsDrawing(false)
+      return;
+    }
+
     const ctx = contextRef.current
     if (!ctx) return
 
-    setIsDrawing(false);
+    setIsDrawing(false)
     ctx.closePath()
+    
     clearPredictionSchedule()
     handlePrediction()
   }
   
   const draw = (e) => {
     if (!isDrawing) return;
+
+    setHasDrawn(true);
+
     const ctx = contextRef.current
     if (!ctx) return
 
     const { x, y } = getPointerPosition(e)
     ctx.lineTo(x, y)
     ctx.stroke()
+
     schedulePrediction()
   }
 
@@ -112,6 +123,8 @@ const CanvasArea = ({
     const canvas = canvasRef.current
     if (!ctx || !canvas) return
 
+    setHasDrawn(false)
+    
     clearPredictionSchedule()
     ctx.fillStyle = DRAWING_STYLES.fillStyle
     ctx.fillRect(0, 0, canvas.width, canvas.height)

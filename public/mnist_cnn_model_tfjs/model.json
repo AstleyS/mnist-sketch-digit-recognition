@@ -20,13 +20,12 @@
           {
             "class_name": "InputLayer",
             "config": {
-                "batch_shape": [null, 28, 28, 1],
-                "batchInputShape": [null, 28, 28, 1],
-                "dtype": "float32",
-                "sparse": false,
-                "name": "input_layer"
+              "batchInputShape": [null, 28, 28, 1],
+              "dtype": "float32",
+              "sparse": false,
+              "name": "input_layer"
             }
-            },
+          },
           {
             "class_name": "Conv2D",
             "config": {

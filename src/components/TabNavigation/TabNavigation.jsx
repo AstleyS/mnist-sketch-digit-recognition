@@ -1,6 +1,6 @@
 import React from 'react';
 import './TabNavigation.css';
-import { TABS } from '../../const';
+import { TABS } from '../../utils/const';
 
 /*
   * TabNavigation component
