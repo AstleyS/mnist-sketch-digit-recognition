@@ -15,8 +15,9 @@ const useDigitModel = () => {
   useEffect(() => {
     const loadModel = async () => {
       try {
-        console.log('Loading model from /mnist_cnn_model_tfjs/model.json...')
-        const loadedModel = await loadLayersModel('/mnist_cnn_model_tfjs/model.json')
+        const modelUrl = `${import.meta.env.BASE_URL}mnist_cnn_model_tfjs/model.json`
+        console.log(`Loading model from ${modelUrl}...`)
+        const loadedModel = await loadLayersModel(modelUrl)
         setModel(loadedModel)
         setIsModelLoaded(true)
         setLoadError(null)

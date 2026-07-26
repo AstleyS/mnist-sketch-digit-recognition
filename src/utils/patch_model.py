@@ -1,6 +1,6 @@
 import json
 
-def patch_tfjs_model_json(model_json_path, verbose=True):
+def trapatch_tfjs_model_json(model_json_path, verbose=True):
     """
     Fix TFJS model.json issues:
     1. Remove Sequential name prefix from weights

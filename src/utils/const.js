@@ -64,7 +64,7 @@ export function getRandomPrediction() {
 
 
 export const MODEL_CONFIG = {
-  modelPath: '/mnist_cnn_model_tfjs/model.json',
+  modelPath: `${import.meta.env.BASE_URL}mnist_cnn_model_tfjs/model.json`,
   inputShape: [28, 28, 1],   // Height, Width, Channels
   numClasses: 10,            // Digits 0-9
   topPredictions: 3          // Number of top predictions to show
